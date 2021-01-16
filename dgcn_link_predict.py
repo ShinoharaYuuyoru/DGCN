@@ -13,7 +13,7 @@ import utils
 class EmbeddingLayer(nn.Module):
     def __init__(self, num_nodes, h_dim):
         super(EmbeddingLayer, self).__init__()
-        self.embedding = torch.nn.Embedding(num_nodes, h_dim)
+        self.embedding = nn.Embedding(num_nodes, h_dim)
 
     def forward(self, g, h, r, norm):
         return self.embedding(h.squeeze())
@@ -131,6 +131,12 @@ def main(args):
         epoch += 1
 
         # perform edge neighborhood sampling to generate training graph and data
+        #   g: Half of sampled graph.
+        #   node_id: unique entity ids.
+        #   edge_type: relation ids.
+        #   node_norm: normalized degrees of entities in graph g.
+        #   data: (posSample, negSample)
+        #   labels: (True*numPosSample, False*numNegSample)
         g, node_id, edge_type, node_norm, data, labels = \
             utils.generate_sampled_graph_and_labels(
                 train_data, args.graph_batch_size, args.graph_split_size,
@@ -151,11 +157,11 @@ def main(args):
             g = g.to(args.gpu)
 
         t0 = time.time()
-        embed = model(g, node_id, edge_type, edge_norm)
+        embed = model(g, node_id, edge_type, edge_norm)     # rgcn.forward(self, g, feat, etypes, norm=None)
         loss = model.get_loss(g, embed, data, labels)
         t1 = time.time()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_norm) # clip gradients
+        nn.utils.clip_grad_norm_(model.parameters(), args.grad_norm) # clip gradients
         optimizer.step()
         t2 = time.time()
 

@@ -11,7 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
 
-            "args": ["--dataset", "FB15K-237", "--gpu", "2", "--eval_protocol", "raw"]
+            "args": ["--dataset", "FB15K-237", "--gpu", "-1", "--eval_protocol", "raw"],
+            "justMyCode": false
         }
     ]
 }

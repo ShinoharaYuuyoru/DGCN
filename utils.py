@@ -98,11 +98,12 @@ def generate_sampled_graph_and_labels(triplets, sample_size, split_size,
     # relabel nodes to have consecutive node ids
     edges = triplets[edges]
     src, rel, dst = edges.transpose()
-    uniq_v, edges = np.unique((src, dst), return_inverse=True)
-    src, dst = np.reshape(edges, (2, -1))
+    uniq_v, edges = np.unique((src, dst), return_inverse=True)      # Get unique entity. uniq_v[edges] -> (src, dst)
+    src, dst = np.reshape(edges, (2, -1))       # uniq_v[src] -> head entity, uniq_v[dst] -> tail entity
     relabeled_edges = np.stack((src, rel, dst)).transpose()
 
     # negative sampling
+    #   samples: (posSamples, negSamples); labels: (True*numPosSamples, False*numNegSamples)
     samples, labels = negative_sampling(relabeled_edges, len(uniq_v),
                                         negative_rate)
 
@@ -145,7 +146,10 @@ def build_graph_from_triplets(num_nodes, num_rels, triplets):
     g.add_edges(src, dst)
     norm = comp_deg_norm(g)
     print("# nodes: {}, # edges: {}".format(num_nodes, len(src)))
-    return g, rel.astype('int64'), norm.astype('int64')
+    # BUG: norm is a double array.
+    #   norm.astype('int64') -> norm.astype('float32')
+    # return g, rel.astype('int64'), norm.astype('int64')
+    return g, rel.astype('int64'), norm.astype('float32')
 
 def build_test_graph(num_nodes, num_rels, edges):
     src, rel, dst = edges.transpose()
@@ -156,14 +160,14 @@ def negative_sampling(pos_samples, num_entity, negative_rate):
     size_of_batch = len(pos_samples)
     num_to_generate = size_of_batch * negative_rate
     neg_samples = np.tile(pos_samples, (negative_rate, 1))
-    labels = np.zeros(size_of_batch * (negative_rate + 1), dtype=np.float32)
+    labels = np.zeros(size_of_batch * (negative_rate + 1), dtype=np.float32)        # I think here should be dtype=np.int32
     labels[: size_of_batch] = 1
     values = np.random.randint(num_entity, size=num_to_generate)
     choices = np.random.uniform(size=num_to_generate)
     subj = choices > 0.5
     obj = choices <= 0.5
-    neg_samples[subj, 0] = values[subj]
-    neg_samples[obj, 2] = values[obj]
+    neg_samples[subj, 0] = values[subj]     # Randomly replace head entity
+    neg_samples[obj, 2] = values[obj]       # Randomly replace tail entity
 
     return np.concatenate((pos_samples, neg_samples)), labels
 
