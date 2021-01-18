@@ -1,0 +1,23 @@
+FB15k-237
+    n-hidden: 500, n-bases: 100
+        MRR (raw): 0.154687
+        Hits (raw) @ 1: 0.091249
+        Hits (raw) @ 3: 0.158116
+        Hits (raw) @ 10: 0.281051
+
+        MRR (filtered): 0.207645
+        Hits (filtered) @ 1: 0.125037
+        Hits (filtered) @ 3: 0.223810
+        Hits (filtered) @ 10: 0.375818
+
+WN18
+    n-hidden: 180, n-bases: 36
+        MRR (raw): 0.523175
+        Hits (raw) @ 1: 0.376400
+        Hits (raw) @ 3: 0.619800
+        Hits (raw) @ 10: 0.804000
+        
+        MRR (filtered): 0.708978
+        Hits (filtered) @ 1: 0.571600
+        Hits (filtered) @ 3: 0.828900
+        Hits (filtered) @ 10: 0.924400

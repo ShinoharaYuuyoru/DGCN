@@ -1,0 +1,13 @@
+FB15K-237
+    rgcn
+        MRR (raw): 0.158927
+        Hits (raw) @ 1: 0.095769
+        Hits (raw) @ 3: 0.159850
+        Hits (raw) @ 10: 0.288943
+
+        MRR (filtered): 0.220895
+        Hits (filtered) @ 1: 0.135591
+        Hits (filtered) @ 3: 0.238933
+        Hits (filtered) @ 10: 0.395827
+
+WN18RR
