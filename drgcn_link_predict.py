@@ -1,4 +1,5 @@
 import argparse
+
 import load_data
 import numpy as np
 import time
@@ -11,13 +12,15 @@ from drgcn_model import BaseDRGCN
 from drgcn_model import Desc2VecCNN
 import drgcn_utils
 
+import matplotlib.pyplot as plt
+
 class EmbeddingLayer(nn.Module):
     def __init__(self, num_nodes, h_dim):
         super(EmbeddingLayer, self).__init__()
         # entity embedding
         self.entityEmbedding = nn.Embedding(num_nodes, h_dim)
 
-    def forward(self, g, h, r, norm, s_e_d_w_embeddings, s_e_d_w_maxNum):       # parameters: graph, entity_id, relation_id, normalizer(maybe)
+    def forward(self, g, h, r, norm):       # parameters: graph, entity_id, relation_id, normalizer(maybe)
         return self.entityEmbedding(h.squeeze())
         # NEED PADDING
 
@@ -25,10 +28,15 @@ class DescEmbeddingLayer(nn.Module):
     def __init__(self, wordNum, h_dim):
         super(DescEmbeddingLayer, self).__init__()
         # word2vec
-        self.wordEmbedding = nn.Embedding(wordNum, h_dim)
+        self.wordEmbedding = nn.Embedding(wordNum+1, h_dim, padding_idx=0)     # 0: 0 padding, 1~: word embeddings
     
-    def forward(self, g, h, r, norm, s_e_d_w_embeddings, s_e_d_w_maxNum):
-        return self.wordEmbedding(s_e_d_w_embeddings.squeeze())
+    def forward(self, s_e_d_w_embeddings, s_e_d_w_maxNum):
+        embeddings = torch.stack([self.wordEmbedding(words) for words in s_e_d_w_embeddings])
+        # for words in s_e_d_w_embeddings:
+        #     desc_embeddings = self.wordEmbedding(words)
+        #     embeddings.append(desc_embeddings)
+        # embeddings = torch.Tensor(embeddings)
+        return embeddings
 
 class DRGCN(BaseDRGCN):
     # init is in BaseDRGCN
@@ -49,11 +57,10 @@ class DRGCN(BaseDRGCN):
                 self.num_bases, activation=act, self_loop=True,
                 dropout=self.dropout)
         
-    def build_desc_hidden_layer(self, idx):
-        act = F.relu if idx < self.num_dkrl_hidden_layers - 1 else None
-        # TBD
+    def build_desc_hidden_layer(self):
+        # act = F.relu if idx < self.num_dkrl_hidden_layers - 1 else None
         return Desc2VecCNN(in_feat=self.h_dim, out_feat=self.h_dim,
-                activation=act, dropout=self.dropout, windows_size=[2,3,4])
+                activation=nn.ReLU(), dropout=self.dropout, windows_size=[2,3,4])
     
 # As the scoring function, we will test these method at least:
 #   1. DistMult
@@ -61,15 +68,15 @@ class DRGCN(BaseDRGCN):
 
 class LinkPredict(nn.Module):
     def __init__(self, in_dim, h_dim, num_rels, num_bases=-1,
-                 num_rgcn_hidden_layers=1, num_dkrl_hidden_layers=1,
+                 num_rgcn_hidden_layers=1, #num_dkrl_hidden_layers=1,
                  dropout=0, use_cuda=False, reg_param=0, 
                  descDict={}, descWordNumDict={},
-                 wordDict=set(), wordNum=0):
+                 wordDict=dict(), wordNum=0):
         super(LinkPredict, self).__init__()
 
         # drgcn model
         self.drgcn = DRGCN(num_nodes=in_dim, h_dim=h_dim, out_dim=h_dim, num_rels=num_rels * 2, num_bases=num_bases,
-                         num_rgcn_hidden_layers=num_rgcn_hidden_layers, num_dkrl_hidden_layers=num_dkrl_hidden_layers,
+                         num_rgcn_hidden_layers=num_rgcn_hidden_layers, #num_dkrl_hidden_layers=num_dkrl_hidden_layers,
                          dropout=dropout, use_self_loop=False, use_cuda=use_cuda,
                          descDict=descDict, descWordNumDict=descWordNumDict,
                          wordDict=wordDict, wordNum=wordNum)
@@ -112,7 +119,7 @@ def node_norm_to_edge_norm(g, node_norm):
 
 def createWordDict(descDict):
     wordDict = dict()
-    wordId = 0
+    wordId = 1      # 0 for 0 padding in embedding.
 
     for entity in descDict:
         desc = descDict[entity]
@@ -130,7 +137,7 @@ def getSampledDescWordList(node_id, descDict, descWordNumDict, wordDict):
         descWordNum = descWordNumDict[entity]
         if descWordNum > sampledDescWordNumMax:
             sampledDescWordNumMax = descWordNum
-    sampledDescWordList = np.full((len(node_id), sampledDescWordNumMax), -1)
+    sampledDescWordList = np.zeros((len(node_id), sampledDescWordNumMax), dtype=np.int32)
     for i, entity in enumerate(node_id):
         desc = descDict[entity].split()
         for j, word in enumerate(desc):
@@ -152,6 +159,13 @@ def main(args):
     #   FB15K-237: 87326 words
     #   WN18RR: 43856 words
     wordDict, wordNum = createWordDict(descDict)
+    
+    # # descWordNum statistic
+    # maxDescWordNum = max(descWordNumDict.values())
+    # sta = np.zeros(maxDescWordNum + 1, dtype=np.int32)
+    # for val in descWordNumDict.values():
+    #     sta[val] += 1
+    # print(sta)
 
     # check cuda
     use_cuda = args.gpu >= 0 and torch.cuda.is_available()
@@ -160,7 +174,7 @@ def main(args):
 
     # create model
     model = LinkPredict(in_dim=num_nodes, h_dim=args.n_hidden, num_rels=num_rels, num_bases=args.n_bases,
-                        num_rgcn_hidden_layers=args.n_rgcn_layers, num_dkrl_hidden_layers=args.n_dkrl_layers,
+                        num_rgcn_hidden_layers=args.n_rgcn_layers, #num_dkrl_hidden_layers=args.n_dkrl_layers,
                         dropout=args.dropout, use_cuda=use_cuda, reg_param=args.regularization,
                         descDict=descDict, descWordNumDict=descWordNumDict,
                         wordDict=wordDict, wordNum=wordNum)
@@ -228,7 +242,7 @@ def main(args):
         
         # Get sampled entitiy descriptions and split the words.
         sampledDescWordList, sampledDescWordNumMax = getSampledDescWordList(node_id.flatten().tolist(), descDict, descWordNumDict, wordDict)
-        sampledDescWordList = torch.from_numpy(sampledDescWordList)     # Convert to tensor
+        sampledDescWordList = torch.from_numpy(sampledDescWordList).long()     # Convert to tensor
 
         # Calculate loss and backward
         #   TBD
@@ -301,7 +315,7 @@ if __name__ == "__main__":
     # Optional settings.
     #   About the model
     #       Overall
-    parser.add_argument("--n_hidden", type=int, default=500, help="Number of hidden units.")
+    parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
     parser.add_argument("--lr", type=float, default=1e-2, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
@@ -310,7 +324,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")
     parser.add_argument("--n_rgcn_layers", type=int, default=2, help="Number of RGCN layers / propagation rounds.")
     #       DKRL
-    parser.add_argument("--n_dkrl_layers", type=int, default=1, help="Number of DKRL layers / propagation rounds.")
+    # parser.add_argument("--n_dkrl_layers", type=int, default=1, help="Number of DKRL layers / propagation rounds.")
 
     #   About training.
     parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
