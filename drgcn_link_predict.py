@@ -86,13 +86,18 @@ class LinkPredict(nn.Module):
         nn.init.kaiming_uniform_(self.w_relation, nonlinearity='relu')      # xavier uniform performs not good with relu, so we use kaiming init.
         # nn.init.xavier_uniform_(self.w_relation, gain=nn.init.calculate_gain('relu'))
 
-    def calc_score(self, embedding, triplets):
-        # DistMult
-        #   TBD
-        s = embedding[triplets[:,0]]
-        r = self.w_relation[triplets[:,1]]
-        o = embedding[triplets[:,2]]
-        score = torch.sum(s * r * o, dim=1)
+    def calc_score(self, h, r, t):
+        def DistMult(h, r, t):
+            score = torch.sum(h * r * t, dim=1)
+            return score
+        
+        def TransE(h, r, t):
+            score = torch.norm((h + r - t), p=2, dim=-1)        # L2
+            return score
+
+        score = DistMult(h, r, t)       # DistMult
+        # score = TransE(mix_h, r, mix_t)
+
         return score
 
     def forward(self, g, h, r, norm, s_e_d_w_embeddings, s_e_d_w_maxNum):
@@ -106,10 +111,18 @@ class LinkPredict(nn.Module):
         # triplets is a list of data samples (positive and negative)
         # each row in the triplets is a 3-tuple of (source, relation, destination)
         
-        # How to calculate the loss of joint model?
-        score = self.calc_score(embed, triplets)
+        # PROBLEM: How to calculate the loss of joint model?
+        # Simple add
+        mix_rate = 0.25
+        mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate
+
+        r = self.w_relation[triplets[:, 1]]
+        mix_h = mix_embedding[triplets[:, 0]]
+        mix_t = mix_embedding[triplets[:, 2]]
+
+        score = self.calc_score(mix_h, r, mix_t)
         predict_loss = F.binary_cross_entropy_with_logits(score, labels)
-        reg_loss = self.regularization_loss(embed)
+        reg_loss = self.regularization_loss(mix_embedding)
         return predict_loss + self.reg_param * reg_loss
 
 def node_norm_to_edge_norm(g, node_norm):
@@ -209,10 +222,8 @@ def main(args):
     test_data = torch.LongTensor(test_data)
 
     # build test graph
-    test_graph, test_rel, test_norm = drgcn_utils.build_test_graph(
-        num_nodes, num_rels, train_data)
-    test_deg = test_graph.in_degrees(
-                range(test_graph.number_of_nodes())).float().view(-1,1)
+    test_graph, test_rel, test_norm = drgcn_utils.build_test_graph(num_nodes, num_rels, train_data)
+    test_deg = test_graph.in_degrees(range(test_graph.number_of_nodes())).float().view(-1,1)
     test_node_id = torch.arange(0, num_nodes, dtype=torch.long).view(-1, 1)
     test_rel = torch.from_numpy(test_rel)
     test_norm = node_norm_to_edge_norm(test_graph, torch.from_numpy(test_norm).view(-1, 1))
