@@ -102,9 +102,11 @@ class LinkPredict(nn.Module):
         return torch.mean(embedding.pow(2)) + torch.mean(self.w_relation.pow(2))
 
     # TBD
-    def get_loss(self, g, embed, triplets, labels):
+    def get_loss(self, g, rgcnEmbedding, triplets, labels, dkrlEmbedding):
         # triplets is a list of data samples (positive and negative)
         # each row in the triplets is a 3-tuple of (source, relation, destination)
+        
+        # How to calculate the loss of joint model?
         score = self.calc_score(embed, triplets)
         predict_loss = F.binary_cross_entropy_with_logits(score, labels)
         reg_loss = self.regularization_loss(embed)
@@ -119,7 +121,7 @@ def node_norm_to_edge_norm(g, node_norm):
 
 def createWordDict(descDict):
     wordDict = dict()
-    wordId = 1      # 0 for 0 padding in embedding.
+    wordId = 0      # 0 for 0 padding in embedding.
 
     for entity in descDict:
         desc = descDict[entity]
@@ -131,20 +133,29 @@ def createWordDict(descDict):
     
     return wordDict, len(wordDict)
 
-def getSampledDescWordList(node_id, descDict, descWordNumDict, wordDict):
-    sampledDescWordNumMax = -1
-    for entity in node_id:
-        descWordNum = descWordNumDict[entity]
-        if descWordNum > sampledDescWordNumMax:
-            sampledDescWordNumMax = descWordNum
-    sampledDescWordList = np.zeros((len(node_id), sampledDescWordNumMax), dtype=np.int32)
-    for i, entity in enumerate(node_id):
-        desc = descDict[entity].split()
-        for j, word in enumerate(desc):
-            wordId = wordDict[word]
-            sampledDescWordList[i][j] = wordId
+def processDescDict(descDict, wordDict):
+    newDescDict = {}
+    for entity in descDict:
+        desc = descDict[entity]
+        desc = desc.split()
+        descWordId = np.zeros(len(desc), dtype=np.int32)
+        for idx, word in enumerate(desc):
+            descWordId[idx] = wordDict[word] + 1        # 0 for padding
+        newDescDict[entity] = descWordId
     
-    return sampledDescWordList, sampledDescWordNumMax
+    return newDescDict
+
+def getSampledDescWordList(node_id, descDict, sampledDescWordNumMax):
+    sampledDescWordList = np.zeros((len(node_id), sampledDescWordNumMax), dtype=np.int32)
+
+    for i, entity in enumerate(node_id):
+        desc = descDict[entity]
+        if len(desc) <= sampledDescWordNumMax:
+            sampledDescWordList[i][:len(desc)] = desc
+        else:
+            sampledDescWordList[i][:] = desc[:sampledDescWordNumMax]
+    
+    return sampledDescWordList
 
 def main(args):
     trainData, validData, testData, descDict, descWordNumDict, entityNum, relationNum = load_data.load_data(args.dataset)
@@ -159,13 +170,27 @@ def main(args):
     #   FB15K-237: 87326 words
     #   WN18RR: 43856 words
     wordDict, wordNum = createWordDict(descDict)
-    
-    # # descWordNum statistic
+
+    # Process descDict(full of text) to descDict(full of wordId)
+    descDict = processDescDict(descDict, wordDict)
+
+    # descWordNum statistic
+    #   As we tested, in FB15K-237 the length of description is in [0, 704]
+    #   704 is too big to process, so we should cut it to a proper length.
+    #   The statistic shows, that 99% descriptions shorter than 331.
+    #   So we decided to cut/pad all descriptions to the size 350.
     # maxDescWordNum = max(descWordNumDict.values())
     # sta = np.zeros(maxDescWordNum + 1, dtype=np.int32)
     # for val in descWordNumDict.values():
     #     sta[val] += 1
-    # print(sta)
+    # s = 0
+    # for idx, a in enumerate(sta):
+    #     if s > (sum(sta)*0.99):
+    #         print(idx)      # FB15K-237: 331
+    #         break
+    #     else:
+    #         s += a
+    sampledDescWordNumMax = 350     # How many words in descriptions should cut or pad.
 
     # check cuda
     use_cuda = args.gpu >= 0 and torch.cuda.is_available()
@@ -241,11 +266,10 @@ def main(args):
             g = g.to(args.gpu)
         
         # Get sampled entitiy descriptions and split the words.
-        sampledDescWordList, sampledDescWordNumMax = getSampledDescWordList(node_id.flatten().tolist(), descDict, descWordNumDict, wordDict)
+        sampledDescWordList = getSampledDescWordList(node_id.flatten().tolist(), descDict, sampledDescWordNumMax)
         sampledDescWordList = torch.from_numpy(sampledDescWordList).long()     # Convert to tensor
 
         # Calculate loss and backward
-        #   TBD
         #   Problem: How to get the loss during rgcnEmbedding and dkrlEmbedding?
         t0 = time.time()
         # embed = model(g, node_id, edge_type, edge_norm)     # rgcn.forward(self, g, feat, etypes, norm=None)
@@ -330,7 +354,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
     parser.add_argument("--evaluate_every", type=int, default=500, help="Perform evaluation every n epochs.")
     parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
-    parser.add_argument("--graph_batch_size", type=int, default=30000, help="Number of edges to sample in each iteration.")
+    parser.add_argument("--graph_batch_size", type=int, default=10000, help="Number of edges to sample in each iteration.")
     parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
     parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
     #   About evaluating.
