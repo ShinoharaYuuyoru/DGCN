@@ -1,3 +1,4 @@
+DistMult decoder
 FB15K-237
     rgcn
         MRR (raw): 0.158927
@@ -10,7 +11,7 @@ FB15K-237
         Hits (filtered) @ 10: 0.395827
     
     drgcn
-        Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='filtered', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.001, n_bases=100, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
+        1. Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='filtered', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.001, n_bases=100, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
             MRR (raw): 0.126576
             Hits (raw) @ 1: 0.067356
             Hits (raw) @ 3: 0.125574
@@ -19,13 +20,23 @@ FB15K-237
             Hits (filtered) @ 1: 0.097259
             Hits (filtered) @ 3: 0.179444
             Hits (filtered) @ 10: 0.330255
-
+        2. Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='raw', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.0001, n_bases=50, n_epochs=5000, n_hidden=100, n_rgcn_layers=3, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.136146
+            Hits (raw) @ 1: 0.074343
+            Hits (raw) @ 3: 0.141796
+            Hits (raw) @ 10: 0.265147
+            MRR (filtered): 0.185744
+            Hits (filtered) @ 1: 0.108766
+            Hits (filtered) @ 3: 0.201212
+            Hits (filtered) @ 10: 0.347039
+        3. (TransE Decoder)
+        
 WN18RR
     rgcn
         TBD
     
     drgcn
-        Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='filtered', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.005, n_bases=22, n_epochs=10000, n_hidden=110, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
+        1. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='filtered', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.005, n_bases=22, n_epochs=10000, n_hidden=110, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
             MRR (raw): 0.221785
             Hits (raw) @ 1: 0.139598
             Hits (raw) @ 3: 0.260051
@@ -34,3 +45,12 @@ WN18RR
             Hits (filtered) @ 1: 0.213784
             Hits (filtered) @ 3: 0.310625
             Hits (filtered) @ 10: 0.400287
+        2. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.001, n_bases=20, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.231610
+            Hits (raw) @ 1: 0.133376
+            Hits (raw) @ 3: 0.273931
+            Hits (raw) @ 10: 0.431238
+            MRR (filtered): 0.295736
+            Hits (filtered) @ 1: 0.208200
+            Hits (filtered) @ 3: 0.337747
+            Hits (filtered) @ 10: 0.460115

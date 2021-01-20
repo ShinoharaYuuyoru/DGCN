@@ -388,7 +388,7 @@ def calc_score(h, r, t):
         score = torch.norm((h + r - t), p=2, dim=1)        # L2
         return -score
 
-    score = DistMult(h, r, t)       # DistMult
-    # score = TransE(h, r, t)     # TransE
+    # score = DistMult(h, r, t)       # DistMult
+    score = TransE(h, r, t)     # TransE
 
     return score

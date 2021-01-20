@@ -22,7 +22,6 @@ class EmbeddingLayer(nn.Module):
 
     def forward(self, g, h, r, norm):       # parameters: graph, entity_id, relation_id, normalizer(maybe)
         return self.entityEmbedding(h.squeeze())
-        # NEED PADDING
 
 class DescEmbeddingLayer(nn.Module):
     def __init__(self, wordNum, h_dim):
@@ -96,8 +95,8 @@ class LinkPredict(nn.Module):
             score = torch.norm((h + r - t), p=2, dim=1)        # L2
             return -score
 
-        score = DistMult(h, r, t)       # DistMult
-        # score = TransE(h, r, t)     # TransE
+        # score = DistMult(h, r, t)       # DistMult
+        score = TransE(h, r, t)     # TransE
 
         return score
 
@@ -372,7 +371,7 @@ if __name__ == "__main__":
     # Optional settings.
     #   About the model
     #       Overall
-    parser.add_argument("--n_hidden", type=int, default=200, help="Number of hidden units.")
+    parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
     parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
@@ -380,7 +379,7 @@ if __name__ == "__main__":
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
     parser.add_argument("--embedding_mix_rate", type=float, default=0.2, help="mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate")
     #       RGCN
-    parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")
+    parser.add_argument("--n_bases", type=int, default=50, help="Number of weight blocks for each relation.")
     parser.add_argument("--n_rgcn_layers", type=int, default=3, help="Number of RGCN layers / propagation rounds.")
     parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
     parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
@@ -388,7 +387,7 @@ if __name__ == "__main__":
     # parser.add_argument("--n_dkrl_layers", type=int, default=1, help="Number of DKRL layers / propagation rounds.")
 
     #   About training.
-    parser.add_argument("--n_epochs", type=int, default=10000, help="Number of minimum training epochs.")
+    parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
     parser.add_argument("--graph_batch_size", type=int, default=1000, help="Number of edges to sample in each iteration.")
     parser.add_argument("--evaluate_every", type=int, default=1000, help="Perform evaluation every n epochs.")
     #   About evaluating.
