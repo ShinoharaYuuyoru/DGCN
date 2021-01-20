@@ -1,0 +1,4 @@
+1. CNN -> RNN / LSTM / Transformer
+2. Pre-trained word2vec
+3. mix embedding? joint scores combination?
+4. Decoder: DistMult, TransE. How about other decoder, like TransR, ComplEx, etc.

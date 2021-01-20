@@ -1,5 +1,5 @@
 import argparse
-
+import os
 import load_data
 import numpy as np
 import time
@@ -222,8 +222,6 @@ def main(args):
                         descDict=descDict, descWordNumDict=descWordNumDict,
                         wordDict=wordDict, wordNum=wordNum,
                         sampledDescWordNumMax=sampledDescWordNumMax)
-    if use_cuda:
-        model.cuda()
     
     # validation and testing triplets
     valid_data = torch.LongTensor(valid_data)
@@ -248,6 +246,14 @@ def main(args):
     model_state_file = 'drgcn_'+args.dataset+'_model_state.pth'
     forward_time = []
     backward_time = []
+
+    # Load existing checkpoint.
+    if os.path.exists(model_state_file):
+        checkpoint = torch.load(model_state_file)
+        model.load_state_dict(checkpoint['state_dict'])
+        print("Existing checkpoint loaded.")
+    if use_cuda:
+        model.cuda()
 
     # training loop
     print("start training...")
@@ -362,7 +368,7 @@ if __name__ == "__main__":
     #   About the model
     #       Overall
     parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
-    parser.add_argument("--lr", type=float, default=1e-2, help="Learning rate.")
+    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
@@ -379,7 +385,7 @@ if __name__ == "__main__":
     parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
     parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
     parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
-    parser.add_argument("--evaluate_every", type=int, default=500, help="Perform evaluation every n epochs.")
+    parser.add_argument("--evaluate_every", type=int, default=1000, help="Perform evaluation every n epochs.")
     #   About evaluating.
     # parser.add_argument("--eval_batch_size", type=int, default=500, help="Batch size when evaluating.")     # No use because we evalute one by one now.
 
