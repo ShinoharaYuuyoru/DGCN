@@ -368,7 +368,7 @@ if __name__ == "__main__":
     #   About the model
     #       Overall
     parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
+    parser.add_argument("--lr", type=float, default=0.005, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
