@@ -222,7 +222,7 @@ if __name__ == "__main__":
     # Optional settings.
     #   About the model
     parser.add_argument("--n_layers", type=int, default=2, help="Number of layers / propagation rounds.")
-    parser.add_argument("--n_hidden", type=int, default=500, help="Number of hidden units.")
+    parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
     parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")
     parser.add_argument("--lr", type=float, default=1e-2, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
@@ -230,9 +230,9 @@ if __name__ == "__main__":
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
     #   About training.
     parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
-    parser.add_argument("--evaluate_every", type=int, default=500, help="Perform evaluation every n epochs.")
+    parser.add_argument("--evaluate_every", type=int, default=1, help="Perform evaluation every n epochs.")
     parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
-    parser.add_argument("--graph_batch_size", type=int, default=30000, help="Number of edges to sample in each iteration.")
+    parser.add_argument("--graph_batch_size", type=int, default=10000, help="Number of edges to sample in each iteration.")
     parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
     parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
     #   About evaluating.

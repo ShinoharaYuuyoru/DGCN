@@ -30,7 +30,7 @@ class DescEmbeddingLayer(nn.Module):
         # word2vec
         self.wordEmbedding = nn.Embedding(wordNum+1, h_dim, padding_idx=0)     # 0: 0 padding, 1~: word embeddings
     
-    def forward(self, s_e_d_w_embeddings, s_e_d_w_maxNum):
+    def forward(self, s_e_d_w_embeddings):
         embeddings = torch.stack([self.wordEmbedding(words) for words in s_e_d_w_embeddings])
         # for words in s_e_d_w_embeddings:
         #     desc_embeddings = self.wordEmbedding(words)
@@ -60,18 +60,15 @@ class DRGCN(BaseDRGCN):
     def build_desc_hidden_layer(self):
         # act = F.relu if idx < self.num_dkrl_hidden_layers - 1 else None
         return Desc2VecCNN(in_feat=self.h_dim, out_feat=self.h_dim,
-                activation=nn.ReLU(), dropout=self.dropout, windows_size=[2,3,4])
+                activation=nn.ReLU(), dropout=self.dropout, window_sizes=[2,3,4], sampledDescWordNumMax=self.sampledDescWordNumMax)
     
-# As the scoring function, we will test these method at least:
-#   1. DistMult
-#   2. TransE
-
 class LinkPredict(nn.Module):
     def __init__(self, in_dim, h_dim, num_rels, num_bases=-1,
                  num_rgcn_hidden_layers=1, #num_dkrl_hidden_layers=1,
                  dropout=0, use_cuda=False, reg_param=0, 
                  descDict={}, descWordNumDict={},
-                 wordDict=dict(), wordNum=0):
+                 wordDict=dict(), wordNum=0,
+                 sampledDescWordNumMax=100):
         super(LinkPredict, self).__init__()
 
         # drgcn model
@@ -79,7 +76,8 @@ class LinkPredict(nn.Module):
                          num_rgcn_hidden_layers=num_rgcn_hidden_layers, #num_dkrl_hidden_layers=num_dkrl_hidden_layers,
                          dropout=dropout, use_self_loop=False, use_cuda=use_cuda,
                          descDict=descDict, descWordNumDict=descWordNumDict,
-                         wordDict=wordDict, wordNum=wordNum)
+                         wordDict=wordDict, wordNum=wordNum,
+                         sampledDescWordNumMax=sampledDescWordNumMax)
 
         self.reg_param = reg_param
         self.w_relation = nn.Parameter(torch.Tensor(num_rels, h_dim))       # randomly init relation matrix
@@ -100,29 +98,25 @@ class LinkPredict(nn.Module):
 
         return score
 
-    def forward(self, g, h, r, norm, s_e_d_w_embeddings, s_e_d_w_maxNum):
-        return self.drgcn.forward(g, h, r, norm, s_e_d_w_embeddings, s_e_d_w_maxNum)
+    def forward(self, g, h, r, norm, s_e_d_w_embeddings):
+        return self.drgcn.forward(g, h, r, norm, s_e_d_w_embeddings)
 
     def regularization_loss(self, embedding):
         return torch.mean(embedding.pow(2)) + torch.mean(self.w_relation.pow(2))
 
-    # TBD
-    def get_loss(self, g, rgcnEmbedding, triplets, labels, dkrlEmbedding):
+    def get_loss(self, g, embedding, triplets, labels):
         # triplets is a list of data samples (positive and negative)
         # each row in the triplets is a 3-tuple of (source, relation, destination)
         
         # PROBLEM: How to calculate the loss of joint model?
-        # Simple add
-        mix_rate = 0.25
-        mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate
-
+        # mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate
         r = self.w_relation[triplets[:, 1]]
-        mix_h = mix_embedding[triplets[:, 0]]
-        mix_t = mix_embedding[triplets[:, 2]]
+        mix_h = embedding[triplets[:, 0]]
+        mix_t = embedding[triplets[:, 2]]
 
         score = self.calc_score(mix_h, r, mix_t)
         predict_loss = F.binary_cross_entropy_with_logits(score, labels)
-        reg_loss = self.regularization_loss(mix_embedding)
+        reg_loss = self.regularization_loss(embedding)
         return predict_loss + self.reg_param * reg_loss
 
 def node_norm_to_edge_norm(g, node_norm):
@@ -170,6 +164,13 @@ def getSampledDescWordList(node_id, descDict, sampledDescWordNumMax):
     
     return sampledDescWordList
 
+def getMixedEmbedding(mix_rate, rgcnEmbedding, dkrlEmbedding):
+    # Simple add
+    mix_rate = 0.25
+    mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate
+
+    return mix_embedding
+
 def main(args):
     trainData, validData, testData, descDict, descWordNumDict, entityNum, relationNum = load_data.load_data(args.dataset)
 
@@ -203,7 +204,7 @@ def main(args):
     #         break
     #     else:
     #         s += a
-    sampledDescWordNumMax = 350     # How many words in descriptions should cut or pad.
+    sampledDescWordNumMax = 350     # How many words in descriptions should be cut or padded to.
 
     # check cuda
     use_cuda = args.gpu >= 0 and torch.cuda.is_available()
@@ -215,21 +216,24 @@ def main(args):
                         num_rgcn_hidden_layers=args.n_rgcn_layers, #num_dkrl_hidden_layers=args.n_dkrl_layers,
                         dropout=args.dropout, use_cuda=use_cuda, reg_param=args.regularization,
                         descDict=descDict, descWordNumDict=descWordNumDict,
-                        wordDict=wordDict, wordNum=wordNum)
-
+                        wordDict=wordDict, wordNum=wordNum,
+                        sampledDescWordNumMax=sampledDescWordNumMax)
+    if use_cuda:
+        model.cuda()
+    
     # validation and testing triplets
     valid_data = torch.LongTensor(valid_data)
     test_data = torch.LongTensor(test_data)
 
-    # build test graph
+    # build test graph, which is the whole graph of train.txt
+    # No need to convert to cuda(), because evaluation is running in CPU.
     test_graph, test_rel, test_norm = drgcn_utils.build_test_graph(num_nodes, num_rels, train_data)
     test_deg = test_graph.in_degrees(range(test_graph.number_of_nodes())).float().view(-1,1)
     test_node_id = torch.arange(0, num_nodes, dtype=torch.long).view(-1, 1)
     test_rel = torch.from_numpy(test_rel)
     test_norm = node_norm_to_edge_norm(test_graph, torch.from_numpy(test_norm).view(-1, 1))
-
-    if use_cuda:
-        model.cuda()
+    allDescWordList = getSampledDescWordList([entityNum for entityNum in range(num_nodes)], descDict, sampledDescWordNumMax)
+    allDescWordList = torch.from_numpy(allDescWordList).long()      # Conver to long tensor
 
     # build adj list and calculate degrees for sampling
     adj_list, degrees = drgcn_utils.get_adj_and_degrees(num_nodes, train_data)
@@ -270,23 +274,24 @@ def main(args):
         edge_norm = node_norm_to_edge_norm(g, torch.from_numpy(node_norm).view(-1, 1))
         data, labels = torch.from_numpy(data), torch.from_numpy(labels)
         deg = g.in_degrees(range(g.number_of_nodes())).float().view(-1, 1)
+
+        # Get sampled entitiy descriptions and split the words.
+        sampledDescWordList = getSampledDescWordList(node_id.flatten().tolist(), descDict, sampledDescWordNumMax)
+        sampledDescWordList = torch.from_numpy(sampledDescWordList).long()     # Convert to tensor
+
         if use_cuda:
             node_id, deg = node_id.cuda(), deg.cuda()
             edge_type, edge_norm = edge_type.cuda(), edge_norm.cuda()
             data, labels = data.cuda(), labels.cuda()
             g = g.to(args.gpu)
-        
-        # Get sampled entitiy descriptions and split the words.
-        sampledDescWordList = getSampledDescWordList(node_id.flatten().tolist(), descDict, sampledDescWordNumMax)
-        sampledDescWordList = torch.from_numpy(sampledDescWordList).long()     # Convert to tensor
+            sampledDescWordList = sampledDescWordList.cuda()
 
         # Calculate loss and backward
-        #   Problem: How to get the loss during rgcnEmbedding and dkrlEmbedding?
+        #   Problem: How to get the loss within rgcnEmbedding and dkrlEmbedding?
         t0 = time.time()
-        # embed = model(g, node_id, edge_type, edge_norm)     # rgcn.forward(self, g, feat, etypes, norm=None)
-        # loss = model.get_loss(g, embed, data, labels)
-        rgcnEmbedding, dkrlEmbedding = model(g, node_id, edge_type, edge_norm, sampledDescWordList, sampledDescWordNumMax)     # rgcn.forward(self, g, feat, etypes, norm=None, desch)
-        loss = model.get_loss(g, rgcnEmbedding, data, labels, dkrlEmbedding)        # TBD
+        rgcnEmbedding, dkrlEmbedding = model(g, node_id, edge_type, edge_norm, sampledDescWordList)
+        mixedEmbedding = getMixedEmbedding(args.embedding_mix_rate, rgcnEmbedding, dkrlEmbedding)
+        loss = model.get_loss(g, mixedEmbedding, data, labels)
         t1 = time.time()
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), args.grad_norm) # clip gradients
@@ -307,8 +312,9 @@ def main(args):
                 model.cpu()
             model.eval()
             print("start eval")
-            embed = model(test_graph, test_node_id, test_rel, test_norm)
-            mrr = drgcn_utils.calc_mrr(embed, model.w_relation, torch.LongTensor(train_data),
+            rgcnEmbedding, dkrlEmbedding = model(test_graph, test_node_id, test_rel, test_norm, allDescWordList)
+            mixedEmbedding = getMixedEmbedding(args.embedding_mix_rate, rgcnEmbedding, dkrlEmbedding)
+            mrr = drgcn_utils.calc_mrr(mixedEmbedding, model.w_relation, torch.LongTensor(train_data),
                                  valid_data, test_data, hits=[1, 3, 10], eval_bz=args.eval_batch_size,
                                  eval_p=args.eval_protocol)
             # save best model
@@ -334,9 +340,11 @@ def main(args):
     model.eval()
     model.load_state_dict(checkpoint['state_dict'])
     print("Using best epoch: {}".format(checkpoint['epoch']))
-    embed = model(test_graph, test_node_id, test_rel, test_norm)
-    drgcn_utils.calc_mrr(embed, model.w_relation, torch.LongTensor(train_data), valid_data,
-                   test_data, hits=[1, 3, 10], eval_bz=args.eval_batch_size, eval_p=args.eval_protocol)
+    rgcnEmbedding, dkrlEmbedding = model(test_graph, test_node_id, test_rel, test_norm, allDescWordList)
+    mixedEmbedding = getMixedEmbedding(args.embedding_mix_rate, rgcnEmbedding, dkrlEmbedding)
+    mrr = drgcn_utils.calc_mrr(mixedEmbedding, model.w_relation, torch.LongTensor(train_data),
+                            valid_data, test_data, hits=[1, 3, 10], eval_bz=args.eval_batch_size,
+                            eval_p=args.eval_protocol)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DGCN')
@@ -355,6 +363,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
+    parser.add_argument("--embedding_mix_rate", type=float, default=0.25, help="mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate")
     #       RGCN
     parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")
     parser.add_argument("--n_rgcn_layers", type=int, default=2, help="Number of RGCN layers / propagation rounds.")
@@ -362,14 +371,14 @@ if __name__ == "__main__":
     # parser.add_argument("--n_dkrl_layers", type=int, default=1, help="Number of DKRL layers / propagation rounds.")
 
     #   About training.
-    parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
-    parser.add_argument("--evaluate_every", type=int, default=500, help="Perform evaluation every n epochs.")
-    parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
-    parser.add_argument("--graph_batch_size", type=int, default=10000, help="Number of edges to sample in each iteration.")
+    parser.add_argument("--n_epochs", type=int, default=10000, help="Number of minimum training epochs.")
+    parser.add_argument("--graph_batch_size", type=int, default=1000, help="Number of edges to sample in each iteration.")
     parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
+    parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
     parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
+    parser.add_argument("--evaluate_every", type=int, default=500, help="Perform evaluation every n epochs.")
     #   About evaluating.
-    parser.add_argument("--eval_batch_size", type=int, default=500, help="Batch size when evaluating.")
+    # parser.add_argument("--eval_batch_size", type=int, default=500, help="Batch size when evaluating.")     # No use because we evalute one by one now.
 
     args = parser.parse_args()
     print(args)

@@ -183,31 +183,26 @@ def sort_and_rank(score, target):
     indices = indices[:, 1].view(-1)
     return indices
 
-def perturb_and_get_raw_rank(embedding, w, a, r, b, test_size, batch_size=100):
-    """ Perturb one element in the triplets
-    """
-    n_batch = (test_size + batch_size - 1) // batch_size
+def perturb_and_get_raw_rank(embedding, w, a, r, b, test_size):
     ranks = []
-    for idx in range(n_batch):
-        print("batch {} / {}".format(idx, n_batch))
-        batch_start = idx * batch_size
-        batch_end = min(test_size, (idx + 1) * batch_size)
-        batch_a = a[batch_start: batch_end]
-        batch_r = r[batch_start: batch_end]
-        # DistMult
-        emb_ar = embedding[batch_a] * w[batch_r]
-        emb_ar = emb_ar.transpose(0, 1).unsqueeze(2) # size: D x E x 1
-        emb_c = embedding.transpose(0, 1).unsqueeze(1) # size: D x 1 x V
-        # out-prod and reduce sum
-        out_prod = torch.bmm(emb_ar, emb_c) # size D x E x V
-        score = torch.sum(out_prod, dim=0) # size E x V
-        score = torch.sigmoid(score)
-        target = b[batch_start: batch_end]
-        ranks.append(sort_and_rank(score, target))
-    return torch.cat(ranks)
+    for idx in range(test_size):
+        if idx % 100 == 0:
+            print("test triplet {} / {}".format(idx, test_size))
+        target_s = a[idx]
+        target_r = r[idx]
+        target_o = b[idx]
+        emb_s = embedding[target_s]
+        emb_r = w[target_r]
+        emb_o = embedding[target_o]
+        scores = calc_score(emb_s, emb_r, emb_o)
+        scores = torch.sigmoid(scores)
+        _, indices = torch.sort(scores, descending=True)
+        rank = int((indices == target_o).nonzero())
+        ranks.append(rank)
+    return torch.LongTensor(ranks)
 
 # return MRR (raw), and Hits @ (1, 3, 10)
-def calc_raw_mrr(embedding, w, test_triplets, hits=[], eval_bz=100):
+def calc_raw_mrr(embedding, w, test_triplets, hits=[]):
     with torch.no_grad():
         s = test_triplets[:, 0]
         r = test_triplets[:, 1]
@@ -215,9 +210,9 @@ def calc_raw_mrr(embedding, w, test_triplets, hits=[], eval_bz=100):
         test_size = test_triplets.shape[0]
 
         # perturb subject
-        ranks_s = perturb_and_get_raw_rank(embedding, w, o, r, s, test_size, eval_bz)
+        ranks_s = perturb_and_get_raw_rank(embedding, w, o, r, s, test_size)
         # perturb object
-        ranks_o = perturb_and_get_raw_rank(embedding, w, s, r, o, test_size, eval_bz)
+        ranks_o = perturb_and_get_raw_rank(embedding, w, s, r, o, test_size)
 
         ranks = torch.cat([ranks_s, ranks_o])
         ranks += 1 # change to 1-indexed
@@ -276,9 +271,8 @@ def perturb_o_and_get_filtered_rank(embedding, w, s, r, o, test_size, triplets_t
         emb_s = embedding[target_s]
         emb_r = w[target_r]
         emb_o = embedding[filtered_o]
-        # DistMult
-        emb_triplet = emb_s * emb_r * emb_o
-        scores = torch.sigmoid(torch.sum(emb_triplet, dim=1))
+        scores = calc_score(emb_s, emb_r, emb_o)
+        scores = torch.sigmoid(scores)
         _, indices = torch.sort(scores, descending=True)
         rank = int((indices == target_o_idx).nonzero())
         ranks.append(rank)
@@ -300,9 +294,8 @@ def perturb_s_and_get_filtered_rank(embedding, w, s, r, o, test_size, triplets_t
         emb_s = embedding[filtered_s]
         emb_r = w[target_r]
         emb_o = embedding[target_o]
-        # DistMult
-        emb_triplet = emb_s * emb_r * emb_o
-        scores = torch.sigmoid(torch.sum(emb_triplet, dim=1))
+        scores = calc_score(emb_s, emb_r, emb_o)
+        scores = torch.sigmoid(scores)
         _, indices = torch.sort(scores, descending=True)
         rank = int((indices == target_s_idx).nonzero())
         ranks.append(rank)
@@ -333,6 +326,21 @@ def calc_filtered_mrr(embedding, w, train_triplets, valid_triplets, test_triplet
             print("Hits (filtered) @ {}: {:.6f}".format(hit, avg_count.item()))
     return mrr.item()
 
+# Score function
+def calc_score(h, r, t):
+    def DistMult(h, r, t):
+        score = torch.sum(h * r * t, dim=1)
+        return score
+    
+    def TransE(h, r, t):
+        score = torch.norm((h + r - t), p=2, dim=-1)        # L2
+        return score
+
+    score = DistMult(h, r, t)       # DistMult
+    # score = TransE(mix_h, r, mix_t)
+
+    return score
+
 #######################################################################
 #
 # Main evaluation function
@@ -343,7 +351,7 @@ def calc_mrr(embedding, w, train_triplets, valid_triplets, test_triplets, hits=[
     if eval_p == "filtered":
         mrr = calc_filtered_mrr(embedding, w, train_triplets, valid_triplets, test_triplets, hits)
     else:
-        mrr = calc_raw_mrr(embedding, w, test_triplets, hits, eval_bz)
+        mrr = calc_raw_mrr(embedding, w, test_triplets, hits)
     return mrr
 
 
@@ -379,3 +387,6 @@ def thread_wrapped_func(func):
             assert isinstance(exception, Exception)
             raise exception.__class__(trace)
     return decorated_function
+
+
+
