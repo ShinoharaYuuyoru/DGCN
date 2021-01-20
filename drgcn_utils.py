@@ -10,6 +10,7 @@ from functools import wraps
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch.multiprocessing import Queue
 import dgl
 
@@ -183,21 +184,22 @@ def sort_and_rank(score, target):
     indices = indices[:, 1].view(-1)
     return indices
 
+# Predict b.
 def perturb_and_get_raw_rank(embedding, w, a, r, b, test_size):
     ranks = []
     for idx in range(test_size):
         if idx % 100 == 0:
             print("test triplet {} / {}".format(idx, test_size))
-        target_s = a[idx]
+        target_a = a[idx]
         target_r = r[idx]
-        target_o = b[idx]
-        emb_s = embedding[target_s]
+        target_b = b[idx]
+        emb_s = embedding[target_a]
         emb_r = w[target_r]
-        emb_o = embedding[target_o]
+        emb_o = embedding
         scores = calc_score(emb_s, emb_r, emb_o)
         scores = torch.sigmoid(scores)
         _, indices = torch.sort(scores, descending=True)
-        rank = int((indices == target_o).nonzero())
+        rank = int((indices == target_b).nonzero())
         ranks.append(rank)
     return torch.LongTensor(ranks)
 
@@ -326,28 +328,13 @@ def calc_filtered_mrr(embedding, w, train_triplets, valid_triplets, test_triplet
             print("Hits (filtered) @ {}: {:.6f}".format(hit, avg_count.item()))
     return mrr.item()
 
-# Score function
-def calc_score(h, r, t):
-    def DistMult(h, r, t):
-        score = torch.sum(h * r * t, dim=1)
-        return score
-    
-    def TransE(h, r, t):
-        score = torch.norm((h + r - t), p=2, dim=-1)        # L2
-        return score
-
-    score = DistMult(h, r, t)       # DistMult
-    # score = TransE(mix_h, r, mix_t)
-
-    return score
-
 #######################################################################
 #
 # Main evaluation function
 #
 #######################################################################
 
-def calc_mrr(embedding, w, train_triplets, valid_triplets, test_triplets, hits=[], eval_bz=100, eval_p="filtered"):
+def calc_mrr(embedding, w, train_triplets, valid_triplets, test_triplets, hits=[], eval_p="filtered"):
     if eval_p == "filtered":
         mrr = calc_filtered_mrr(embedding, w, train_triplets, valid_triplets, test_triplets, hits)
     else:
@@ -388,5 +375,20 @@ def thread_wrapped_func(func):
             raise exception.__class__(trace)
     return decorated_function
 
+# Score function
+def calc_score(h, r, t):
+    def DistMult(h, r, t):
+        score = torch.sum(h * r * t, dim=1)
+        return score
+    
+    def TransE(h, r, t):
+        # h = F.normalize(h, 2, -1)
+        # r = F.normalize(r, 2, -1)
+        # t = F.normalize(t, 2, -1)
+        score = torch.norm((h + r - t), p=2, dim=1)        # L2
+        return -score
 
+    score = DistMult(h, r, t)       # DistMult
+    # score = TransE(h, r, t)     # TransE
 
+    return score

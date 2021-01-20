@@ -90,11 +90,14 @@ class LinkPredict(nn.Module):
             return score
         
         def TransE(h, r, t):
-            score = torch.norm((h + r - t), p=2, dim=-1)        # L2
-            return score
+            # h = F.normalize(h, 2, -1)
+            # r = F.normalize(r, 2, -1)
+            # t = F.normalize(t, 2, -1)
+            score = torch.norm((h + r - t), p=2, dim=1)        # L2
+            return -score
 
         score = DistMult(h, r, t)       # DistMult
-        # score = TransE(mix_h, r, mix_t)
+        # score = TransE(h, r, t)     # TransE
 
         return score
 
@@ -115,6 +118,7 @@ class LinkPredict(nn.Module):
         mix_t = embedding[triplets[:, 2]]
 
         score = self.calc_score(mix_h, r, mix_t)
+        # score = torch.sigmoid(score)
         predict_loss = F.binary_cross_entropy_with_logits(score, labels)
         reg_loss = self.regularization_loss(embedding)
         return predict_loss + self.reg_param * reg_loss
@@ -196,15 +200,15 @@ def main(args):
     # maxDescWordNum = max(descWordNumDict.values())
     # sta = np.zeros(maxDescWordNum + 1, dtype=np.int32)
     # for val in descWordNumDict.values():
-    #     sta[val] += 1
+    #     sta[val] += 1       # MAX: FB15K-237 704, WN18RR 91
     # s = 0
     # for idx, a in enumerate(sta):
     #     if s > (sum(sta)*0.99):
-    #         print(idx)      # FB15K-237: 331
+    #         print(idx)      # FB15K-237: 331, WN18RR:40
     #         break
     #     else:
     #         s += a
-    sampledDescWordNumMax = 350     # How many words in descriptions should be cut or padded to.
+    sampledDescWordNumMax = args.desc_word_num     # How many words in descriptions should be cut or padded to.
 
     # check cuda
     use_cuda = args.gpu >= 0 and torch.cuda.is_available()
@@ -241,7 +245,7 @@ def main(args):
     # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    model_state_file = 'model_state.pth'
+    model_state_file = 'drgcn_'+args.dataset+'_model_state.pth'
     forward_time = []
     backward_time = []
 
@@ -315,8 +319,7 @@ def main(args):
             rgcnEmbedding, dkrlEmbedding = model(test_graph, test_node_id, test_rel, test_norm, allDescWordList)
             mixedEmbedding = getMixedEmbedding(args.embedding_mix_rate, rgcnEmbedding, dkrlEmbedding)
             mrr = drgcn_utils.calc_mrr(mixedEmbedding, model.w_relation, torch.LongTensor(train_data),
-                                 valid_data, test_data, hits=[1, 3, 10], eval_bz=args.eval_batch_size,
-                                 eval_p=args.eval_protocol)
+                                 valid_data, test_data, hits=[1, 3, 10], eval_p=args.eval_protocol)
             # save best model
             if mrr < best_mrr:
                 if epoch >= args.n_epochs:
@@ -343,8 +346,7 @@ def main(args):
     rgcnEmbedding, dkrlEmbedding = model(test_graph, test_node_id, test_rel, test_norm, allDescWordList)
     mixedEmbedding = getMixedEmbedding(args.embedding_mix_rate, rgcnEmbedding, dkrlEmbedding)
     mrr = drgcn_utils.calc_mrr(mixedEmbedding, model.w_relation, torch.LongTensor(train_data),
-                            valid_data, test_data, hits=[1, 3, 10], eval_bz=args.eval_batch_size,
-                            eval_p=args.eval_protocol)
+                            valid_data, test_data, hits=[1, 3, 10], eval_p=args.eval_protocol)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DGCN')
@@ -354,6 +356,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, required=True, help="Dataset to use. 'FB15K-237' or 'WN18RR'.")
     parser.add_argument("--gpu", type=int, required=True, help="GPU number(>=0) to use. Input '-1' to use CPU.")
     parser.add_argument("--eval_protocol", type=str, required=True, help="Type of evaluation probocol: 'raw' or 'filtered'.")
+    parser.add_argument("--desc_word_num", type=int, required=True, help="Word number in each description to cut or pad. Recommend: FB15K-237 350, WN18RR 100.")
 
     # Optional settings.
     #   About the model

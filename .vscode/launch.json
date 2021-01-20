@@ -14,6 +14,7 @@
             "args": ["--dataset", "FB15K-237",
                     "--gpu", "1",
                     "--eval_protocol", "raw",
+                    "--desc_word_num", "350",
                     "--evaluate_every", "1"],
             "justMyCode": false
         }
