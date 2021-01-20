@@ -249,9 +249,14 @@ def main(args):
 
     # Load existing checkpoint.
     if os.path.exists(model_state_file):
-        checkpoint = torch.load(model_state_file)
-        model.load_state_dict(checkpoint['state_dict'])
-        print("Existing checkpoint loaded.")
+        try:
+            checkpoint = torch.load(model_state_file)
+            model.load_state_dict(checkpoint['state_dict'])
+        except RuntimeError:
+            print("Checkpoint unmatch! Retrain the model!")
+        else:
+            print("Existing checkpoint loaded.")
+
     if use_cuda:
         model.cuda()
 
@@ -368,11 +373,11 @@ if __name__ == "__main__":
     #   About the model
     #       Overall
     parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
-    parser.add_argument("--lr", type=float, default=0.005, help="Learning rate.")
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
-    parser.add_argument("--embedding_mix_rate", type=float, default=0.25, help="mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate")
+    parser.add_argument("--embedding_mix_rate", type=float, default=0.2, help="mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate")
     #       RGCN
     parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")
     parser.add_argument("--n_rgcn_layers", type=int, default=2, help="Number of RGCN layers / propagation rounds.")

@@ -4,10 +4,33 @@ FB15K-237
         Hits (raw) @ 1: 0.095769
         Hits (raw) @ 3: 0.159850
         Hits (raw) @ 10: 0.288943
-
         MRR (filtered): 0.220895
         Hits (filtered) @ 1: 0.135591
         Hits (filtered) @ 3: 0.238933
         Hits (filtered) @ 10: 0.395827
+    
+    drgcn
+        Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='filtered', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.001, n_bases=100, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.126576
+            Hits (raw) @ 1: 0.067356
+            Hits (raw) @ 3: 0.125574
+            Hits (raw) @ 10: 0.253616
+            MRR (filtered): 0.171295
+            Hits (filtered) @ 1: 0.097259
+            Hits (filtered) @ 3: 0.179444
+            Hits (filtered) @ 10: 0.330255
 
 WN18RR
+    rgcn
+        TBD
+    
+    drgcn
+        Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='filtered', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.005, n_bases=22, n_epochs=10000, n_hidden=110, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.221785
+            Hits (raw) @ 1: 0.139598
+            Hits (raw) @ 3: 0.260051
+            Hits (raw) @ 10: 0.380983
+            MRR (filtered): 0.280795
+            Hits (filtered) @ 1: 0.213784
+            Hits (filtered) @ 3: 0.310625
+            Hits (filtered) @ 10: 0.400287

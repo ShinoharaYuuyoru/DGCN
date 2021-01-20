@@ -1,0 +1,2 @@
+1	Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='filtered', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.005, n_bases=22, n_epochs=10000, n_hidden=110, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
+
