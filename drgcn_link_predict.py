@@ -372,24 +372,24 @@ if __name__ == "__main__":
     # Optional settings.
     #   About the model
     #       Overall
-    parser.add_argument("--n_hidden", type=int, default=100, help="Number of hidden units.")
+    parser.add_argument("--n_hidden", type=int, default=200, help="Number of hidden units.")
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.2, help="Dropout probability.")
+    parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
     parser.add_argument("--embedding_mix_rate", type=float, default=0.2, help="mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate")
     #       RGCN
     parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")
-    parser.add_argument("--n_rgcn_layers", type=int, default=2, help="Number of RGCN layers / propagation rounds.")
+    parser.add_argument("--n_rgcn_layers", type=int, default=3, help="Number of RGCN layers / propagation rounds.")
+    parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
+    parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
     #       DKRL
     # parser.add_argument("--n_dkrl_layers", type=int, default=1, help="Number of DKRL layers / propagation rounds.")
 
     #   About training.
     parser.add_argument("--n_epochs", type=int, default=10000, help="Number of minimum training epochs.")
     parser.add_argument("--graph_batch_size", type=int, default=1000, help="Number of edges to sample in each iteration.")
-    parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
-    parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
-    parser.add_argument("--edge_sampler", type=str, default="uniform", help="Type of edge sampler: 'uniform' or 'neighbor'.")
     parser.add_argument("--evaluate_every", type=int, default=1000, help="Perform evaluation every n epochs.")
     #   About evaluating.
     # parser.add_argument("--eval_batch_size", type=int, default=500, help="Batch size when evaluating.")     # No use because we evalute one by one now.
