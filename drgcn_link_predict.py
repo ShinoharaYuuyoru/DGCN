@@ -387,7 +387,7 @@ if __name__ == "__main__":
     # parser.add_argument("--n_dkrl_layers", type=int, default=1, help="Number of DKRL layers / propagation rounds.")
 
     #   About training.
-    parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
+    parser.add_argument("--n_epochs", type=int, default=10000, help="Number of minimum training epochs.")
     parser.add_argument("--graph_batch_size", type=int, default=1000, help="Number of edges to sample in each iteration.")
     parser.add_argument("--evaluate_every", type=int, default=1000, help="Perform evaluation every n epochs.")
     #   About evaluating.

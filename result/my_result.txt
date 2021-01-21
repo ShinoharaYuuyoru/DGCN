@@ -29,8 +29,16 @@ FB15K-237
             Hits (filtered) @ 1: 0.108766
             Hits (filtered) @ 3: 0.201212
             Hits (filtered) @ 10: 0.347039
-        3. (TransE Decoder)
-        
+        3. (TransE Decoder) Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='raw', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.001, n_bases=50, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.059795
+            Hits (raw) @ 1: 0.028950
+            Hits (raw) @ 3: 0.063105
+            Hits (raw) @ 10: 0.115997
+            MRR (filtered): 0.095688
+            Hits (filtered) @ 1: 0.044440
+            Hits (filtered) @ 3: 0.098945
+            Hits (filtered) @ 10: 0.190096
+
 WN18RR
     rgcn
         TBD
@@ -54,3 +62,12 @@ WN18RR
             Hits (filtered) @ 1: 0.208200
             Hits (filtered) @ 3: 0.337747
             Hits (filtered) @ 10: 0.460115
+        3. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.2, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=5000, graph_split_size=0.5, lr=0.0001, n_bases=20, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.255217
+            Hits (raw) @ 1: 0.147894
+            Hits (raw) @ 3: 0.312540
+            Hits (raw) @ 10: 0.470645
+            MRR (filtered): 0.344927
+            Hits (filtered) @ 1: 0.258137
+            Hits (filtered) @ 3: 0.391512
+            Hits (filtered) @ 10: 0.502393
