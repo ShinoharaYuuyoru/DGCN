@@ -38,11 +38,41 @@ FB15K-237
             Hits (filtered) @ 1: 0.044440
             Hits (filtered) @ 3: 0.098945
             Hits (filtered) @ 10: 0.190096
-
+    drgcn_rnn
+        4. Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=100, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, n_rnn_hidden_size=100, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.151311
+            Hits (raw) @ 1: 0.091591
+            Hits (raw) @ 3: 0.155771
+            Hits (raw) @ 10: 0.268958
+            MRR (filtered): 0.198281
+            Hits (filtered) @ 1: 0.121738
+            Hits (filtered) @ 3: 0.214502
+            Hits (filtered) @ 10: 0.351901
+        5. weight matrix Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=1, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=100, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, n_rnn_hidden_size=100, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.140760
+            Hits (raw) @ 1: 0.081721
+            Hits (raw) @ 3: 0.146731
+            Hits (raw) @ 10: 0.254202
+            MRR (filtered): 0.192685
+            Hits (filtered) @ 1: 0.117805
+            Hits (filtered) @ 3: 0.209054
+            Hits (filtered) @ 10: 0.340223
+        6. weight matrix Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=100, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, n_rnn_hidden_size=20, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.156085
+            Hits (raw) @ 1: 0.097528
+            Hits (raw) @ 3: 0.163442
+            Hits (raw) @ 10: 0.271695
+            MRR (filtered): 0.210313
+            Hits (filtered) @ 1: 0.139549
+            Hits (filtered) @ 3: 0.227670
+            Hits (filtered) @ 10: 0.351168
 
 WN18RR
     rgcn
-        TBD
+        MRR (raw): 0.228850
+        Hits (raw) @ 1: 0.143108
+        Hits (raw) @ 3: 0.290204
+        Hits (raw) @ 10: 0.383216
     
     drgcn_mix_cnn
         1. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='filtered', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.005, n_bases=22, n_epochs=10000, n_hidden=110, n_rgcn_layers=2, negative_sample=10, regularization=0.01)
@@ -72,3 +102,31 @@ WN18RR
             Hits (filtered) @ 1: 0.258137
             Hits (filtered) @ 3: 0.391512
             Hits (filtered) @ 10: 0.502393
+    drgcn_rnn
+        4. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=20, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, n_rnn_hidden_size=100, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.209307
+            Hits (raw) @ 1: 0.121889
+            Hits (raw) @ 3: 0.248724
+            Hits (raw) @ 10: 0.383855
+            MRR (filtered): 0.281524
+            Hits (filtered) @ 1: 0.208679
+            Hits (filtered) @ 3: 0.315412
+            Hits (filtered) @ 10: 0.419592
+        5. weight matrix Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=20, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, n_rnn_hidden_size=100, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.188716
+            Hits (raw) @ 1: 0.112157
+            Hits (raw) @ 3: 0.228302
+            Hits (raw) @ 10: 0.336630
+            MRR (filtered): 0.252168
+            Hits (filtered) @ 1: 0.192246
+            Hits (filtered) @ 3: 0.279036
+            Hits (filtered) @ 10: 0.365667
+        6. weight matrix Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=20, n_dkrl_layers=2, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, n_rnn_hidden_size=20, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.180474
+            Hits (raw) @ 1: 0.102265
+            Hits (raw) @ 3: 0.225909
+            Hits (raw) @ 10: 0.332323
+            MRR (filtered): 0.251032
+            Hits (filtered) @ 1: 0.194320
+            Hits (filtered) @ 3: 0.283344
+            Hits (filtered) @ 10: 0.356892
