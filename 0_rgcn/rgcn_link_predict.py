@@ -229,8 +229,8 @@ if __name__ == "__main__":
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
     parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
     #   About training.
-    parser.add_argument("--n_epochs", type=int, default=5000, help="Number of minimum training epochs.")
-    parser.add_argument("--evaluate_every", type=int, default=1, help="Perform evaluation every n epochs.")
+    parser.add_argument("--n_epochs", type=int, default=10000, help="Number of minimum training epochs.")
+    parser.add_argument("--evaluate_every", type=int, default=500, help="Perform evaluation every n epochs.")
     parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
     parser.add_argument("--graph_batch_size", type=int, default=10000, help="Number of edges to sample in each iteration.")
     parser.add_argument("--graph_split_size", type=float, default=0.5, help="Portion of edges used as positive sample.")
