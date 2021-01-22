@@ -169,7 +169,6 @@ def getSampledDescWordList(node_id, descDict, sampledDescWordNumMax):
 
 def getMixedEmbedding(mix_rate, rgcnEmbedding, dkrlEmbedding):
     # Simple add
-    mix_rate = 0.25
     mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate
 
     return mix_embedding
@@ -240,7 +239,8 @@ def main(args):
     adj_list, degrees = drgcn_utils.get_adj_and_degrees(num_nodes, train_data)
 
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    learningRate = args.lr
+    optimizer = torch.optim.Adam(model.parameters(), lr=learningRate)
 
     model_state_file = 'drgcn_'+args.dataset+'_model_state.pth'
     forward_time = []
@@ -332,6 +332,10 @@ def main(args):
                                  valid_data, test_data, hits=[1, 3, 10], eval_p=args.eval_protocol)
             # save best model
             if mrr < best_mrr:
+                learningRate = learningRate / 2
+                for g in optimizer.param_groups:
+                    g['lr'] = learningRate
+                print("Learning rate changed to: " + str(learningRate))
                 if epoch >= args.n_epochs:
                     break
             else:

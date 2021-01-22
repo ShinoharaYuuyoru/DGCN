@@ -1,4 +1,8 @@
 1. CNN -> RNN / LSTM / Transformer
+    solved. RNN+Attention.
 2. Pre-trained word2vec
 3. mix embedding? joint scores combination?
+    solved. _joint_score.py
 4. Decoder: DistMult, TransE. How about other decoder, like TransR, ComplEx, etc.
+    DistMult > TransE
+5. Regularization of embedding.
