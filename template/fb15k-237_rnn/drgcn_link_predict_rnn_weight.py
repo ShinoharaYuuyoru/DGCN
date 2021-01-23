@@ -59,8 +59,8 @@ class LinkPredict(nn.Module):
         return torch.mean(embedding.pow(2)) + torch.mean(self.w_relation.pow(2))
     
     def getMixedEmbedding(self, rgcnEmbedding, dkrlEmbedding, node_id):
-        weight_matrix = torch.sigmoid(self.weight_matrix)
-        weight_matrix = weight_matrix[node_id.squeeze()]
+        weight_matrix = self.weight_matrix[node_id.squeeze()]
+        weight_matrix = torch.sigmoid(weight_matrix)
         mix_embedding = rgcnEmbedding * weight_matrix + dkrlEmbedding * (1 - weight_matrix)
 
         return mix_embedding
@@ -370,7 +370,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.5, help="Dropout probability.")
     parser.add_argument("--negative_sample", type=int, default=10, help="Number of negative samples per positive sample.")
     parser.add_argument("--grad_norm", type=float, default=1.0, help="Norm to clip gradient to.")
-    parser.add_argument("--regularization", type=float, default=0.01, help="Regularization weight.")
+    parser.add_argument("--regularization", type=float, default=0.001, help="Regularization weight.")
     # parser.add_argument("--embedding_mix_rate", type=float, default=0.25, help="mix_embedding = rgcnEmbedding*(1-mix_rate) + dkrlEmbedding*mix_rate")
     #       RGCN
     parser.add_argument("--n_bases", type=int, default=100, help="Number of weight blocks for each relation.")

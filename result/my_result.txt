@@ -9,7 +9,7 @@ FB15K-237
         Hits (filtered) @ 1: 0.135591
         Hits (filtered) @ 3: 0.238933
         Hits (filtered) @ 10: 0.395827
-        
+
         MRR (raw): 0.145107
         Hits (raw) @ 1: 0.085166
         Hits (raw) @ 3: 0.146267
@@ -74,6 +74,15 @@ FB15K-237
             Hits (filtered) @ 1: 0.139549
             Hits (filtered) @ 3: 0.227670
             Hits (filtered) @ 10: 0.351168
+        7. weight matrix Namespace(dataset='FB15K-237', desc_word_num=350, dropout=0.2, edge_sampler='uniform', eval_protocol='filtered', evaluate_every=500, gpu=2, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=100, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, n_rnn_hidden_size=20, negative_sample=10, regularization=0.001)
+            MRR (raw): 0.147421
+            Hits (raw) @ 1: 0.091860
+            Hits (raw) @ 3: 0.148979
+            Hits (raw) @ 10: 0.257427
+            MRR (filtered): 0.198987
+            Hits (filtered) @ 1: 0.127284
+            Hits (filtered) @ 3: 0.210935
+            Hits (filtered) @ 10: 0.345207
 
 WN18RR
     rgcn
@@ -113,6 +122,15 @@ WN18RR
             Hits (filtered) @ 1: 0.258137
             Hits (filtered) @ 3: 0.391512
             Hits (filtered) @ 10: 0.502393
+        【7】. weight matrix Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.5, edge_sampler='uniform', eval_protocol='raw', evaluate_every=500, gpu=0, grad_norm=1.0, graph_batch_size=5000, graph_split_size=0.5, lr=0.01, n_bases=20, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.253055
+            Hits (raw) @ 1: 0.162731
+            Hits (raw) @ 3: 0.318762
+            Hits (raw) @ 10: 0.408424
+            MRR (filtered): 0.372755
+            Hits (filtered) @ 1: 0.345405
+            Hits (filtered) @ 3: 0.384014
+            Hits (filtered) @ 10: 0.419272
     drgcn_rnn
         4. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.2, edge_sampler='uniform', embedding_mix_rate=0.25, eval_protocol='raw', evaluate_every=1000, gpu=0, grad_norm=1.0, graph_batch_size=1000, graph_split_size=0.5, lr=0.01, n_bases=20, n_dkrl_layers=1, n_epochs=10000, n_hidden=100, n_rgcn_layers=2, n_rnn_hidden_size=100, negative_sample=10, regularization=0.01)
             MRR (raw): 0.209307
