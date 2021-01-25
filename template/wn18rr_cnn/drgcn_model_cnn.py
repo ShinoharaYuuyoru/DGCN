@@ -136,7 +136,7 @@ class Desc2VecCNN(nn.Module):
         self.maxpools = nn.ModuleList()
         for window_size in self.window_sizes:
             conv = nn.Conv1d(in_channels=self.in_feat, out_channels=self.out_feat, kernel_size=window_size)
-            maxpool = nn.MaxPool1d(kernel_size=self.s_e_d_w_maxNum-window_size+1)
+            maxpool = nn.MaxPool1d(kernel_size=self.s_e_d_w_maxNum)
 
             self.convs.append(conv)
             self.maxpools.append(maxpool)

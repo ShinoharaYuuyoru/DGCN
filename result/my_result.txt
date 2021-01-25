@@ -159,3 +159,12 @@ WN18RR
             Hits (filtered) @ 1: 0.194320
             Hits (filtered) @ 3: 0.283344
             Hits (filtered) @ 10: 0.356892
+        8. Namespace(dataset='WN18RR', desc_word_num=100, dropout=0.5, edge_sampler='uniform', eval_protocol='filtered', evaluate_every=500, gpu=2, grad_norm=1.0, graph_batch_size=5000, graph_split_size=0.5, lr=0.01, n_bases=20, n_epochs=10000, n_hidden=100, n_rgcn_layers=3, negative_sample=10, regularization=0.01)
+            MRR (raw): 0.255149
+            Hits (raw) @ 1: 0.167677
+            Hits (raw) @ 3: 0.323070
+            Hits (raw) @ 10: 0.400925
+            MRR (filtered): 0.368901
+            Hits (filtered) @ 1: 0.343172
+            Hits (filtered) @ 3: 0.381461
+            Hits (filtered) @ 10: 0.408743
